@@ -5,6 +5,6 @@
 build
 captures
 local.properties
-*.xcuserdata
+xcuserdata/
 *.xcworkspacedata
 DerivedData/
