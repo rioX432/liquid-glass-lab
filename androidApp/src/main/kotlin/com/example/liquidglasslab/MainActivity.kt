@@ -4,47 +4,27 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BlurOn
-import androidx.compose.material.icons.filled.Compare
-import androidx.compose.material.icons.filled.Lens
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.liquidglasslab.screens.CloudyScreen
+import androidx.compose.ui.unit.dp
 import com.example.liquidglasslab.screens.ComparisonScreen
-import com.example.liquidglasslab.screens.HazeScreen
+import com.example.liquidglasslab.screens.PlaygroundScreen
 import com.example.liquidglasslab.theme.LiquidGlassLabTheme
-import kotlinx.serialization.Serializable
-
-@Serializable data object HazeRoute
-@Serializable data object CloudyRoute
-@Serializable data object ComparisonRoute
-
-data class BottomNavItem(
-    val label: String,
-    val icon: ImageVector,
-    val route: Any,
-)
-
-val bottomNavItems = listOf(
-    BottomNavItem("Haze", Icons.Default.BlurOn, HazeRoute),
-    BottomNavItem("Cloudy", Icons.Default.Lens, CloudyRoute),
-    BottomNavItem("Compare", Icons.Default.Compare, ComparisonRoute),
-)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,43 +38,42 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+enum class AppMode(val label: String) {
+    Playground("Playground"),
+    Comparison("Comparison"),
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+    var selectedModeIndex by rememberSaveable { mutableIntStateOf(0) }
+    val modes = AppMode.entries
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            NavigationBar {
-                bottomNavItems.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) },
-                        selected = currentDestination?.hasRoute(item.route::class) == true,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                    )
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = {
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
+                ) {
+                    modes.forEachIndexed { index, mode ->
+                        SegmentedButton(
+                            selected = selectedModeIndex == index,
+                            onClick = { selectedModeIndex = index },
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = modes.size,
+                            ),
+                        ) {
+                            Text(mode.label)
+                        }
+                    }
                 }
-            }
-        },
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = HazeRoute,
-            modifier = Modifier.padding(innerPadding),
-        ) {
-            composable<HazeRoute> { HazeScreen() }
-            composable<CloudyRoute> { CloudyScreen() }
-            composable<ComparisonRoute> { ComparisonScreen() }
+            },
+        )
+
+        when (modes[selectedModeIndex]) {
+            AppMode.Playground -> PlaygroundScreen()
+            AppMode.Comparison -> ComparisonScreen()
         }
     }
 }
