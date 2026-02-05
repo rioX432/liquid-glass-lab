@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -82,7 +82,6 @@ private fun CloudyBlurTab() {
     ) {
         Text("Cloudy Blur", style = MaterialTheme.typography.headlineSmall)
 
-        // Blur radius slider
         SliderRow(
             label = "Blur Radius",
             value = blurRadius.toFloat(),
@@ -91,7 +90,6 @@ private fun CloudyBlurTab() {
             onValueChange = { blurRadius = it.toInt() },
         )
 
-        // Background with blur applied
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -120,7 +118,6 @@ private fun CloudyBlurTab() {
             }
         }
 
-        // Grid with blur
         Text("Grid with blur", style = MaterialTheme.typography.titleMedium)
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -148,22 +145,35 @@ private fun CloudyBlurTab() {
 
 @Composable
 private fun LiquidGlassTab() {
+    // Basic parameters
     var refraction by remember { mutableFloatStateOf(0.25f) }
     var curve by remember { mutableFloatStateOf(0.25f) }
     var dispersion by remember { mutableFloatStateOf(0.0f) }
     var cornerRadius by remember { mutableFloatStateOf(50f) }
+
+    // Lens size (#8)
+    var lensWidth by remember { mutableFloatStateOf(350f) }
+    var lensHeight by remember { mutableFloatStateOf(350f) }
+
+    // Additional parameters (#7)
+    var saturation by remember { mutableFloatStateOf(1.0f) }
+    var contrast by remember { mutableFloatStateOf(1.0f) }
+    var tintAlpha by remember { mutableFloatStateOf(0.0f) }
+    var edge by remember { mutableFloatStateOf(0.0f) }
 
     // Drag state for lens position
     var lensCenter by remember { mutableStateOf(Offset.Zero) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
     var initialized by remember { mutableStateOf(false) }
 
+    val tintColor = Color.White.copy(alpha = tintAlpha)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("Liquid Glass Lens", style = MaterialTheme.typography.headlineSmall)
         Text(
@@ -172,11 +182,24 @@ private fun LiquidGlassTab() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        // Parameter sliders
+        // Basic parameters
+        Text("Basic Parameters", style = MaterialTheme.typography.titleSmall)
         SliderRow("Refraction", refraction, 0f..1f, "%.2f".format(refraction)) { refraction = it }
         SliderRow("Curve", curve, 0f..1f, "%.2f".format(curve)) { curve = it }
         SliderRow("Dispersion", dispersion, 0f..0.5f, "%.2f".format(dispersion)) { dispersion = it }
         SliderRow("Corner Radius", cornerRadius, 0f..150f, "%.0f".format(cornerRadius)) { cornerRadius = it }
+
+        // Lens size (#8)
+        Text("Lens Size", style = MaterialTheme.typography.titleSmall)
+        SliderRow("Width", lensWidth, 100f..500f, "%.0f".format(lensWidth)) { lensWidth = it }
+        SliderRow("Height", lensHeight, 100f..500f, "%.0f".format(lensHeight)) { lensHeight = it }
+
+        // Additional parameters (#7)
+        Text("Color Adjustments", style = MaterialTheme.typography.titleSmall)
+        SliderRow("Saturation", saturation, 0f..2f, "%.2f".format(saturation)) { saturation = it }
+        SliderRow("Contrast", contrast, 0.5f..2f, "%.2f".format(contrast)) { contrast = it }
+        SliderRow("Tint Alpha", tintAlpha, 0f..0.5f, "%.2f".format(tintAlpha)) { tintAlpha = it }
+        SliderRow("Edge", edge, 0f..20f, "%.1f".format(edge)) { edge = it }
 
         // Image with liquid glass effect
         Box(
@@ -208,14 +231,43 @@ private fun LiquidGlassTab() {
                     .fillMaxSize()
                     .liquidGlass(
                         lensCenter = lensCenter,
-                        lensSize = Size(350f, 350f),
+                        lensSize = Size(lensWidth, lensHeight),
                         cornerRadius = cornerRadius,
                         refraction = refraction,
                         curve = curve,
                         dispersion = dispersion,
+                        saturation = saturation,
+                        contrast = contrast,
+                        tint = tintColor,
+                        edge = edge,
                     ),
                 contentScale = ContentScale.Crop,
             )
+        }
+
+        // Current values summary
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("Current Settings", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Lens: ${lensWidth.toInt()}x${lensHeight.toInt()} | Corner: ${cornerRadius.toInt()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Refraction: ${"%.2f".format(refraction)} | Curve: ${"%.2f".format(curve)} | Dispersion: ${"%.2f".format(dispersion)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Saturation: ${"%.2f".format(saturation)} | Contrast: ${"%.2f".format(contrast)} | Edge: ${"%.1f".format(edge)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -224,6 +276,8 @@ private fun LiquidGlassTab() {
 private fun CombinedTab() {
     var blurRadius by remember { mutableIntStateOf(10) }
     var refraction by remember { mutableFloatStateOf(0.25f) }
+    var lensWidth by remember { mutableFloatStateOf(300f) }
+    var lensHeight by remember { mutableFloatStateOf(300f) }
     var lensCenter by remember { mutableStateOf(Offset.Zero) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
     var initialized by remember { mutableStateOf(false) }
@@ -244,6 +298,8 @@ private fun CombinedTab() {
 
         SliderRow("Blur", blurRadius.toFloat(), 0f..25f, "$blurRadius") { blurRadius = it.toInt() }
         SliderRow("Refraction", refraction, 0f..1f, "%.2f".format(refraction)) { refraction = it }
+        SliderRow("Lens Width", lensWidth, 100f..400f, "%.0f".format(lensWidth)) { lensWidth = it }
+        SliderRow("Lens Height", lensHeight, 100f..400f, "%.0f".format(lensHeight)) { lensHeight = it }
 
         Box(
             modifier = Modifier
@@ -275,7 +331,7 @@ private fun CombinedTab() {
                     .cloudy(radius = blurRadius)
                     .liquidGlass(
                         lensCenter = lensCenter,
-                        lensSize = Size(300f, 300f),
+                        lensSize = Size(lensWidth, lensHeight),
                         refraction = refraction,
                     ),
                 contentScale = ContentScale.Crop,
