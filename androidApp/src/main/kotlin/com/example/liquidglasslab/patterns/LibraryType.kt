@@ -6,7 +6,9 @@ enum class LibraryType(val label: String) {
 }
 
 enum class PatternType(val label: String) {
-    AppBarBottomBar("AppBar + Content + BottomBar"),
-    FloatingCard("Floating Card over Image"),
-    FullScreenOverlay("Full Screen Blur Overlay"),
+    AppBarBottomBar("AppBar + BottomBar"),
+    FloatingCard("Floating Card"),
+    FullScreenOverlay("Full Screen Overlay"),
+    ABToggle("A/B Toggle"),
+    SplitView("Split View"),
 }

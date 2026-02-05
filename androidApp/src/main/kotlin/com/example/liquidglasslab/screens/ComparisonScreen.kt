@@ -19,11 +19,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.liquidglasslab.patterns.ABTogglePattern
 import com.example.liquidglasslab.patterns.AppBarBottomBarPattern
 import com.example.liquidglasslab.patterns.FloatingCardPattern
 import com.example.liquidglasslab.patterns.FullScreenOverlayPattern
 import com.example.liquidglasslab.patterns.LibraryType
 import com.example.liquidglasslab.patterns.PatternType
+import com.example.liquidglasslab.patterns.SplitViewPattern
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,29 +56,37 @@ fun ComparisonScreen() {
             }
         }
 
-        // Library selector
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            libraries.forEachIndexed { index, library ->
-                SegmentedButton(
-                    selected = selectedLibraryIndex == index,
-                    onClick = { selectedLibraryIndex = index },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = libraries.size,
-                    ),
-                ) {
-                    Text(library.label)
+        // Library selector (only for non-comparison patterns)
+        val selectedPattern = patterns[selectedPatternIndex]
+        val showLibrarySelector = selectedPattern !in listOf(
+            PatternType.ABToggle,
+            PatternType.SplitView,
+        )
+
+        if (showLibrarySelector) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                libraries.forEachIndexed { index, library ->
+                    SegmentedButton(
+                        selected = selectedLibraryIndex == index,
+                        onClick = { selectedLibraryIndex = index },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = libraries.size,
+                        ),
+                    ) {
+                        Text(library.label)
+                    }
                 }
             }
         }
 
         // Pattern content
         val selectedLibrary = libraries[selectedLibraryIndex]
-        when (patterns[selectedPatternIndex]) {
+        when (selectedPattern) {
             PatternType.AppBarBottomBar -> AppBarBottomBarPattern(
                 libraryType = selectedLibrary,
                 modifier = Modifier.fillMaxSize(),
@@ -87,6 +97,12 @@ fun ComparisonScreen() {
             )
             PatternType.FullScreenOverlay -> FullScreenOverlayPattern(
                 libraryType = selectedLibrary,
+                modifier = Modifier.fillMaxSize(),
+            )
+            PatternType.ABToggle -> ABTogglePattern(
+                modifier = Modifier.fillMaxSize(),
+            )
+            PatternType.SplitView -> SplitViewPattern(
                 modifier = Modifier.fillMaxSize(),
             )
         }
