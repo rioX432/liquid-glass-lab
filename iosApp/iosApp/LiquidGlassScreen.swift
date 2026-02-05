@@ -1,5 +1,21 @@
 import SwiftUI
 
+// MARK: - Glass Effect Container
+
+struct GlassEffectContainer<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+    }
+}
+
+// MARK: - Main Screen
+
 struct LiquidGlassScreen: View {
     @State private var selectedTab = 0
 
@@ -22,14 +38,238 @@ struct PlaygroundView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Glass", systemImage: "sparkle", value: 0) {
+            Tab("Custom", systemImage: "slider.horizontal.3", value: 0) {
+                CustomControlsView()
+            }
+            Tab("Glass", systemImage: "sparkle", value: 1) {
                 GlassEffectDemoView()
             }
-            Tab("Cards", systemImage: "rectangle.on.rectangle", value: 1) {
+            Tab("Cards", systemImage: "rectangle.on.rectangle", value: 2) {
                 GlassCardDemoView()
             }
-            Tab("Interactive", systemImage: "hand.tap", value: 2) {
+            Tab("Interactive", systemImage: "hand.tap", value: 3) {
                 InteractiveGlassDemoView()
+            }
+        }
+    }
+}
+
+// MARK: - Custom Controls View
+
+enum GlassStyleType: String, CaseIterable {
+    case regular = "Regular"
+    case clear = "Clear"
+}
+
+enum TintColorOption: String, CaseIterable {
+    case none = "None"
+    case blue = "Blue"
+    case red = "Red"
+    case green = "Green"
+    case purple = "Purple"
+    case orange = "Orange"
+
+    var color: Color? {
+        switch self {
+        case .none: return nil
+        case .blue: return .blue
+        case .red: return .red
+        case .green: return .green
+        case .purple: return .purple
+        case .orange: return .orange
+        }
+    }
+}
+
+struct CustomControlsView: View {
+    @State private var glassStyle: GlassStyleType = .regular
+    @State private var tintColor: TintColorOption = .none
+    @State private var tintOpacity: Double = 0.5
+    @State private var isInteractive: Bool = false
+    @State private var cornerRadius: Double = 24
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Preview section
+                    ZStack {
+                        AsyncImage(url: URL(string: "https://picsum.photos/seed/custom/800/600")) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Color.gray.opacity(0.3)
+                        }
+                        .frame(height: 300)
+                        .clipped()
+
+                        // Glass effect preview
+                        GlassPreviewContent(
+                            glassStyle: glassStyle,
+                            tintColor: tintColor,
+                            tintOpacity: tintOpacity,
+                            isInteractive: isInteractive,
+                            cornerRadius: cornerRadius
+                        )
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    // Controls
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Glass Style
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Glass Style")
+                                .font(.headline)
+                            Picker("Style", selection: $glassStyle) {
+                                ForEach(GlassStyleType.allCases, id: \.self) { style in
+                                    Text(style.rawValue).tag(style)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        Divider()
+
+                        // Tint Color
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tint Color")
+                                .font(.headline)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    ForEach(TintColorOption.allCases, id: \.self) { option in
+                                        Button {
+                                            tintColor = option
+                                        } label: {
+                                            Circle()
+                                                .fill(option.color ?? Color.gray.opacity(0.3))
+                                                .frame(width: 44, height: 44)
+                                                .overlay {
+                                                    if option == .none {
+                                                        Image(systemName: "xmark")
+                                                            .foregroundStyle(.secondary)
+                                                    }
+                                                }
+                                                .overlay {
+                                                    if tintColor == option {
+                                                        Circle()
+                                                            .strokeBorder(Color.primary, lineWidth: 3)
+                                                    }
+                                                }
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+
+                            if tintColor != .none {
+                                HStack {
+                                    Text("Opacity")
+                                    Slider(value: $tintOpacity, in: 0.1...1.0)
+                                    Text("\(Int(tintOpacity * 100))%")
+                                        .frame(width: 50)
+                                }
+                            }
+                        }
+
+                        Divider()
+
+                        // Corner Radius
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Corner Radius")
+                                .font(.headline)
+                            HStack {
+                                Slider(value: $cornerRadius, in: 0...100)
+                                Text("\(Int(cornerRadius))")
+                                    .frame(width: 40)
+                            }
+                        }
+
+                        Divider()
+
+                        // Interactive Toggle
+                        Toggle("Interactive Mode", isOn: $isInteractive)
+                            .font(.headline)
+
+                        // Current settings summary
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Current Settings")
+                                .font(.headline)
+                            Text("Style: \(glassStyle.rawValue)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("Tint: \(tintColor.rawValue)\(tintColor != .none ? " @ \(Int(tintOpacity * 100))%" : "")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("Corner: \(Int(cornerRadius))pt | Interactive: \(isInteractive ? "Yes" : "No")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.vertical)
+            }
+            .navigationTitle("Custom Controls")
+        }
+    }
+}
+
+struct GlassPreviewContent: View {
+    let glassStyle: GlassStyleType
+    let tintColor: TintColorOption
+    let tintOpacity: Double
+    let isInteractive: Bool
+    let cornerRadius: Double
+
+    var body: some View {
+        let content = VStack(spacing: 8) {
+            Text("Glass Preview")
+                .font(.headline)
+            Text("Style: \(glassStyle.rawValue)")
+                .font(.caption)
+            if tintColor != .none {
+                Text("Tint: \(tintColor.rawValue) (\(Int(tintOpacity * 100))%)")
+                    .font(.caption)
+            }
+            if isInteractive {
+                Text("Interactive: ON")
+                    .font(.caption)
+            }
+        }
+        .padding(20)
+
+        let shape = RoundedRectangle(cornerRadius: cornerRadius)
+
+        // Apply glass effect based on settings
+        Group {
+            switch (glassStyle, tintColor, isInteractive) {
+            // Regular style combinations
+            case (.regular, .none, false):
+                content.glassEffect(.regular, in: shape)
+            case (.regular, .none, true):
+                content.glassEffect(.regular.interactive(), in: shape)
+            case (.regular, let tint, false) where tint != .none:
+                content.glassEffect(.regular.tint(tint.color!.opacity(tintOpacity)), in: shape)
+            case (.regular, let tint, true) where tint != .none:
+                content.glassEffect(.regular.tint(tint.color!.opacity(tintOpacity)).interactive(), in: shape)
+
+            // Clear style combinations
+            case (.clear, .none, false):
+                content.glassEffect(.clear, in: shape)
+            case (.clear, .none, true):
+                content.glassEffect(.clear.interactive(), in: shape)
+            case (.clear, let tint, false) where tint != .none:
+                content.glassEffect(.clear.tint(tint.color!.opacity(tintOpacity)), in: shape)
+            case (.clear, let tint, true) where tint != .none:
+                content.glassEffect(.clear.tint(tint.color!.opacity(tintOpacity)).interactive(), in: shape)
+
+            default:
+                content.glassEffect(.regular, in: shape)
             }
         }
     }
