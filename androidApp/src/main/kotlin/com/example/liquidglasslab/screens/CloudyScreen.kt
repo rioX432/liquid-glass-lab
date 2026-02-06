@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.liquidglasslab.SampleData
+import com.example.liquidglasslab.patterns.hazeEquivalentCloudyRadius
 import com.skydoves.cloudy.cloudy
 import com.skydoves.cloudy.liquidGlass
 
@@ -71,7 +72,9 @@ fun CloudyScreen() {
 
 @Composable
 private fun CloudyBlurTab() {
-    var blurRadius by remember { mutableIntStateOf(15) }
+    val hazeDefault = hazeEquivalentCloudyRadius()
+    var blurRadius by remember { mutableIntStateOf(hazeDefault) }
+    val maxRadius = (hazeDefault * 2).coerceAtLeast(60)
 
     Column(
         modifier = Modifier
@@ -83,9 +86,9 @@ private fun CloudyBlurTab() {
         Text("Cloudy Blur", style = MaterialTheme.typography.headlineSmall)
 
         SliderRow(
-            label = "Blur Radius",
+            label = "Blur Radius (Haze 24dp ≈ $hazeDefault px)",
             value = blurRadius.toFloat(),
-            valueRange = 0f..30f,
+            valueRange = 0f..maxRadius.toFloat(),
             valueLabel = "$blurRadius",
             onValueChange = { blurRadius = it.toInt() },
         )
@@ -274,7 +277,9 @@ private fun LiquidGlassTab() {
 
 @Composable
 private fun CombinedTab() {
-    var blurRadius by remember { mutableIntStateOf(10) }
+    val hazeDefault = hazeEquivalentCloudyRadius()
+    var blurRadius by remember { mutableIntStateOf(hazeDefault) }
+    val maxRadius = (hazeDefault * 2).coerceAtLeast(60)
     var refraction by remember { mutableFloatStateOf(0.25f) }
     var lensWidth by remember { mutableFloatStateOf(300f) }
     var lensHeight by remember { mutableFloatStateOf(300f) }
@@ -296,7 +301,7 @@ private fun CombinedTab() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        SliderRow("Blur", blurRadius.toFloat(), 0f..25f, "$blurRadius") { blurRadius = it.toInt() }
+        SliderRow("Blur (Haze 24dp ≈ $hazeDefault px)", blurRadius.toFloat(), 0f..maxRadius.toFloat(), "$blurRadius") { blurRadius = it.toInt() }
         SliderRow("Refraction", refraction, 0f..1f, "%.2f".format(refraction)) { refraction = it }
         SliderRow("Lens Width", lensWidth, 100f..400f, "%.0f".format(lensWidth)) { lensWidth = it }
         SliderRow("Lens Height", lensHeight, 100f..400f, "%.0f".format(lensHeight)) { lensHeight = it }

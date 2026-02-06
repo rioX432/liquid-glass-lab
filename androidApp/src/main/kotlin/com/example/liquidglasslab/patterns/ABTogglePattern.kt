@@ -147,7 +147,7 @@ private fun CloudyContent() {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(16.dp)
-                .cloudy(radius = 20),
+                .cloudy(radius = hazeEquivalentCloudyRadius()),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -156,7 +156,7 @@ private fun CloudyContent() {
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    "Using cloudy(radius = 20)",
+                    "Using cloudy(radius = hazeEquivalent)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

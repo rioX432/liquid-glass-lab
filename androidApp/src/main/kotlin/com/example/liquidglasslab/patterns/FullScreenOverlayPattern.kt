@@ -85,7 +85,7 @@ private fun CloudyFullScreenOverlay(modifier: Modifier = Modifier) {
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
-                .cloudy(radius = 15),
+                .cloudy(radius = hazeEquivalentCloudyRadius()),
             contentScale = ContentScale.Crop,
         )
 

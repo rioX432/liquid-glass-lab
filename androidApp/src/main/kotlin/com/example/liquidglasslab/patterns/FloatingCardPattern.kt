@@ -87,7 +87,7 @@ private fun CloudyFloatingCard(modifier: Modifier = Modifier) {
                 .align(Alignment.Center)
                 .fillMaxWidth()
                 .padding(24.dp)
-                .cloudy(radius = 25),
+                .cloudy(radius = hazeEquivalentCloudyRadius()),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
