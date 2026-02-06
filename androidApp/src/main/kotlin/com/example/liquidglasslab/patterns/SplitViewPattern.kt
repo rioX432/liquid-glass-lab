@@ -195,7 +195,7 @@ private fun CloudySide(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
                 .align(Alignment.BottomCenter)
-                .cloudy(radius = 20),
+                .cloudy(radius = hazeEquivalentCloudyRadius()),
         )
     }
 }

@@ -147,14 +147,14 @@ private fun CloudyAppBarBottomBar(modifier: Modifier = Modifier) {
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
             ),
-            modifier = Modifier.cloudy(radius = 20),
+            modifier = Modifier.cloudy(radius = hazeEquivalentCloudyRadius()),
         )
 
         // Bottom bar with cloudy blur
         BottomAppBar(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .cloudy(radius = 20),
+                .cloudy(radius = hazeEquivalentCloudyRadius()),
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
         ) {
             BottomBarContent()
