@@ -1,6 +1,5 @@
 package com.example.liquidglasslab.patterns
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -30,25 +29,30 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.liquidglasslab.LiquidGlassParams
 import com.example.liquidglasslab.SampleData
 import com.skydoves.cloudy.cloudy
 import com.skydoves.cloudy.liquidGlass
+import com.example.liquidglasslab.shader.enhancedLiquidGlass
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import androidx.compose.foundation.background
 
 @Composable
 fun FloatingCardPattern(
     blurMode: BlurMode,
     blurRadiusDp: Float,
     modifier: Modifier = Modifier,
+    liquidGlassParams: LiquidGlassParams = LiquidGlassParams.Default,
+    lightDirection: Offset = Offset(-0.707f, -0.707f),
 ) {
     when (blurMode) {
         BlurMode.Haze -> HazeFloatingCard(blurRadiusDp, modifier)
         BlurMode.Cloudy -> CloudyFloatingCard(blurRadiusDp, modifier)
-        BlurMode.LiquidGlass -> LiquidGlassFloatingCard(blurRadiusDp, modifier)
+        BlurMode.LiquidGlass -> LiquidGlassFloatingCard(blurRadiusDp, liquidGlassParams, lightDirection, modifier)
     }
 }
 
@@ -137,15 +141,23 @@ private fun CloudyFloatingCard(
 @Composable
 private fun LiquidGlassFloatingCard(
     blurRadiusDp: Float,
+    params: LiquidGlassParams,
+    lightDirection: Offset,
     modifier: Modifier = Modifier,
 ) {
-    val cloudyRadius = hazeEquivalentCloudyRadius(blurRadiusDp)
+    val hazeState = rememberHazeState()
+    val hazeStyle = HazeStyle(
+        blurRadius = blurRadiusDp.dp,
+        tints = listOf(HazeTint(params.tint)),
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         AsyncImage(
             model = SampleData.heroImage,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = hazeState),
             contentScale = ContentScale.Crop,
         )
 
@@ -162,18 +174,19 @@ private fun LiquidGlassFloatingCard(
                     .height(IntrinsicSize.Min)
                     .clipToBounds(),
             ) {
-                // Blurred + refracted background
-                LiquidGlassCardBackground(
-                    imageUrl = SampleData.heroImage,
-                    cloudyRadius = cloudyRadius,
-                    cornerRadius = 24f,
-                    modifier = Modifier.matchParentSize(),
-                )
-                // Tint overlay
+                // Haze backdrop blur layer
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(Color.White.copy(alpha = 0.15f)),
+                        .clip(RoundedCornerShape(24.dp))
+                        .hazeEffect(state = hazeState, style = hazeStyle),
+                )
+                // LiquidGlass refraction layer
+                LiquidGlassCardOverlay(
+                    params = params,
+                    cornerRadius = 24f,
+                    lightDirection = lightDirection,
+                    modifier = Modifier.matchParentSize(),
                 )
                 // Content on top (determines card height)
                 FloatingCardContent()
@@ -182,36 +195,32 @@ private fun LiquidGlassFloatingCard(
     }
 }
 
-/** Blurred + refracted background for card-shaped liquid glass. */
+/** Transparent overlay that applies liquidGlass refraction for card shapes. */
 @Composable
-private fun LiquidGlassCardBackground(
-    imageUrl: String,
-    cloudyRadius: Int,
+private fun LiquidGlassCardOverlay(
+    params: LiquidGlassParams,
     cornerRadius: Float,
+    lightDirection: Offset = Offset(-0.707f, -0.707f),
     modifier: Modifier = Modifier,
 ) {
     var size by remember { mutableStateOf(Size.Zero) }
 
-    AsyncImage(
-        model = imageUrl,
-        contentDescription = null,
+    Box(
         modifier = modifier
             .onSizeChanged { s ->
                 size = Size(s.width.toFloat(), s.height.toFloat())
             }
-            .cloudy(radius = cloudyRadius)
             .then(
                 if (size.width > 0f && size.height > 0f) {
-                    Modifier.liquidGlass(
+                    Modifier.enhancedLiquidGlass(
                         lensCenter = Offset(size.width / 2f, size.height / 2f),
                         lensSize = size,
                         cornerRadius = cornerRadius,
-                        refraction = 0.2f,
-                        curve = 0.15f,
+                        params = params,
+                        lightDirection = lightDirection,
                     )
                 } else Modifier
             ),
-        contentScale = ContentScale.Crop,
     )
 }
 

@@ -31,14 +31,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.liquidglasslab.LiquidGlassParams
 import com.example.liquidglasslab.SampleData
 import com.skydoves.cloudy.cloudy
 import com.skydoves.cloudy.liquidGlass
+import com.example.liquidglasslab.shader.enhancedLiquidGlass
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
@@ -50,11 +51,13 @@ fun FullScreenOverlayPattern(
     blurMode: BlurMode,
     blurRadiusDp: Float,
     modifier: Modifier = Modifier,
+    liquidGlassParams: LiquidGlassParams = LiquidGlassParams.Default,
+    lightDirection: Offset = Offset(-0.707f, -0.707f),
 ) {
     when (blurMode) {
         BlurMode.Haze -> HazeFullScreenOverlay(blurRadiusDp, modifier)
         BlurMode.Cloudy -> CloudyFullScreenOverlay(blurRadiusDp, modifier)
-        BlurMode.LiquidGlass -> LiquidGlassFullScreenOverlay(blurRadiusDp, modifier)
+        BlurMode.LiquidGlass -> LiquidGlassFullScreenOverlay(blurRadiusDp, liquidGlassParams, lightDirection, modifier)
     }
 }
 
@@ -121,38 +124,52 @@ private fun CloudyFullScreenOverlay(
 @Composable
 private fun LiquidGlassFullScreenOverlay(
     blurRadiusDp: Float,
+    params: LiquidGlassParams,
+    lightDirection: Offset,
     modifier: Modifier = Modifier,
 ) {
-    val cloudyRadius = hazeEquivalentCloudyRadius(blurRadiusDp)
+    val hazeState = rememberHazeState()
+    val hazeStyle = HazeStyle(
+        blurRadius = blurRadiusDp.dp,
+        tints = listOf(HazeTint(params.tint)),
+    )
     var containerSize by remember { mutableStateOf(Size.Zero) }
 
-    Box(modifier = modifier.fillMaxSize().clipToBounds()) {
-        // Blurred + refracted full-screen background
+    Box(modifier = modifier.fillMaxSize()) {
         AsyncImage(
             model = SampleData.heroImage,
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
-                .onSizeChanged { size ->
-                    containerSize = Size(size.width.toFloat(), size.height.toFloat())
-                }
-                .cloudy(radius = cloudyRadius)
-                .then(
-                    if (containerSize.width > 0f && containerSize.height > 0f) {
-                        Modifier.liquidGlass(
-                            lensCenter = Offset(containerSize.width / 2f, containerSize.height / 2f),
-                            lensSize = containerSize,
-                            cornerRadius = 0f,
-                            refraction = 0.15f,
-                            curve = 0.15f,
-                        )
-                    } else Modifier
-                ),
+                .hazeSource(state = hazeState),
             contentScale = ContentScale.Crop,
         )
 
+        // Haze backdrop blur layer
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeEffect(state = hazeState, style = hazeStyle),
+        )
+
+        // LiquidGlass refraction layer
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged { size ->
+                    containerSize = Size(size.width.toFloat(), size.height.toFloat())
+                }
+                .then(
+                    if (containerSize.width > 0f && containerSize.height > 0f) {
+                        Modifier.enhancedLiquidGlass(
+                            lensCenter = Offset(containerSize.width / 2f, containerSize.height / 2f),
+                            lensSize = containerSize,
+                            cornerRadius = 0f,
+                            params = params,
+                            lightDirection = lightDirection,
+                        )
+                    } else Modifier
+                ),
             contentAlignment = Alignment.Center,
         ) {
             ModalContent()
