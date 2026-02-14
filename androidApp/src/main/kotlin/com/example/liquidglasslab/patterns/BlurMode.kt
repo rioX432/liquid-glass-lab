@@ -2,18 +2,18 @@ package com.example.liquidglasslab.patterns
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.roundToInt
 
-enum class LibraryType(val label: String) {
+enum class BlurMode(val label: String) {
     Haze("Haze"),
     Cloudy("Cloudy"),
+    LiquidGlass("Liquid Glass"),
 }
 
 enum class PatternType(val label: String) {
-    AppBarBottomBar("AppBar + BottomBar"),
-    FloatingCard("Floating Card"),
-    FullScreenOverlay("Full Screen Overlay"),
-    ABToggle("A/B Toggle"),
-    SplitView("Split View"),
+    AppBarBottomBar("NavBar + Bar"),
+    FloatingCard("Card"),
+    FullScreenOverlay("Overlay"),
 }
 
 /**
@@ -25,5 +25,5 @@ enum class PatternType(val label: String) {
 @Composable
 fun hazeEquivalentCloudyRadius(hazeBlurRadiusDp: Float = 24f): Int {
     val density = LocalDensity.current.density
-    return (2f * hazeBlurRadiusDp * density).toInt()
+    return (2f * hazeBlurRadiusDp * density).roundToInt()
 }

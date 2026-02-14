@@ -22,36 +22,54 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.liquidglasslab.SampleData
 import com.skydoves.cloudy.cloudy
+import com.skydoves.cloudy.liquidGlass
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun FullScreenOverlayPattern(
-    libraryType: LibraryType,
+    blurMode: BlurMode,
+    blurRadiusDp: Float,
     modifier: Modifier = Modifier,
 ) {
-    when (libraryType) {
-        LibraryType.Haze -> HazeFullScreenOverlay(modifier)
-        LibraryType.Cloudy -> CloudyFullScreenOverlay(modifier)
+    when (blurMode) {
+        BlurMode.Haze -> HazeFullScreenOverlay(blurRadiusDp, modifier)
+        BlurMode.Cloudy -> CloudyFullScreenOverlay(blurRadiusDp, modifier)
+        BlurMode.LiquidGlass -> LiquidGlassFullScreenOverlay(blurRadiusDp, modifier)
     }
 }
 
 @Composable
-private fun HazeFullScreenOverlay(modifier: Modifier = Modifier) {
+private fun HazeFullScreenOverlay(
+    blurRadiusDp: Float,
+    modifier: Modifier = Modifier,
+) {
     val hazeState = rememberHazeState()
+    val style = HazeStyle(
+        blurRadius = blurRadiusDp.dp,
+        tints = listOf(HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f))),
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Background image
         AsyncImage(
             model = SampleData.heroImage,
             contentDescription = null,
@@ -61,48 +79,89 @@ private fun HazeFullScreenOverlay(modifier: Modifier = Modifier) {
             contentScale = ContentScale.Crop,
         )
 
-        // Full screen blur overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .hazeEffect(
-                    state = hazeState,
-                    style = HazeMaterials.ultraThin(),
-                ),
+                .hazeEffect(state = hazeState, style = style),
             contentAlignment = Alignment.Center,
         ) {
-            ModalContent(libraryLabel = "Haze")
+            ModalContent()
         }
     }
 }
 
 @Composable
-private fun CloudyFullScreenOverlay(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize()) {
-        // Background image with blur applied
+private fun CloudyFullScreenOverlay(
+    blurRadiusDp: Float,
+    modifier: Modifier = Modifier,
+) {
+    val cloudyRadius = hazeEquivalentCloudyRadius(blurRadiusDp)
+
+    Box(modifier = modifier.fillMaxSize().clipToBounds()) {
         AsyncImage(
             model = SampleData.heroImage,
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
-                .cloudy(radius = hazeEquivalentCloudyRadius()),
+                .cloudy(radius = cloudyRadius),
             contentScale = ContentScale.Crop,
         )
 
-        // Semi-transparent overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(1.dp), // Workaround for cloudy not supporting full transparency
+                .padding(1.dp),
             contentAlignment = Alignment.Center,
         ) {
-            ModalContent(libraryLabel = "Cloudy")
+            ModalContent()
         }
     }
 }
 
 @Composable
-private fun ModalContent(libraryLabel: String) {
+private fun LiquidGlassFullScreenOverlay(
+    blurRadiusDp: Float,
+    modifier: Modifier = Modifier,
+) {
+    val cloudyRadius = hazeEquivalentCloudyRadius(blurRadiusDp)
+    var containerSize by remember { mutableStateOf(Size.Zero) }
+
+    Box(modifier = modifier.fillMaxSize().clipToBounds()) {
+        // Blurred + refracted full-screen background
+        AsyncImage(
+            model = SampleData.heroImage,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged { size ->
+                    containerSize = Size(size.width.toFloat(), size.height.toFloat())
+                }
+                .cloudy(radius = cloudyRadius)
+                .then(
+                    if (containerSize.width > 0f && containerSize.height > 0f) {
+                        Modifier.liquidGlass(
+                            lensCenter = Offset(containerSize.width / 2f, containerSize.height / 2f),
+                            lensSize = containerSize,
+                            cornerRadius = 0f,
+                            refraction = 0.15f,
+                            curve = 0.15f,
+                        )
+                    } else Modifier
+                ),
+            contentScale = ContentScale.Crop,
+        )
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            ModalContent()
+        }
+    }
+}
+
+@Composable
+private fun ModalContent() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,7 +182,7 @@ private fun ModalContent(libraryLabel: String) {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "This modal demonstrates a full-screen blur overlay using $libraryLabel. The background content is blurred behind this dialog.",
+                text = "This modal demonstrates a full-screen blur overlay. The background content is blurred behind this dialog.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
